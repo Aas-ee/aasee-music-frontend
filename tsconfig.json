@@ -1,0 +1,27 @@
+{
+  // "extends": "@vue/tsconfig/tsconfig.web.json",
+  // "references": [
+  //   { "path": "./tsconfig.app.json" },
+  //   { "path": "./tsconfig.node.json" }
+  // ],
+  "extends": "@vue/tsconfig/tsconfig.web.json",
+  "compilerOptions": {
+    "isolatedModules": false,
+    "baseUrl": ".",          // 基准路径
+    "paths": {
+      "@/*": ["src/*"]       // 映射别名路径
+    },
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "env.d.ts"
+  ],
+  // "references": [
+  //   {
+  //     "path": "./tsconfig.vite-config.json"
+  //   }
+  // ]
+}
