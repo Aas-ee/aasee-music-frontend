@@ -107,6 +107,16 @@ const router = createRouter({
             path: Pages.mvDetail,
             name: Pages.mvDetail,
             component: () => import('@/views/mv/mvDetail.vue'),
+        },
+        {
+            path: 'api-example',
+            name: 'apiExample',
+            component: () => import('@/views/api/ApiExample.vue'),
+            meta: {
+                menu: 'apiExample',
+                title: 'API 示例',
+                keepAlive: true,
+            }
         }
     ],
     }

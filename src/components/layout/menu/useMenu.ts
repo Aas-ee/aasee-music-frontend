@@ -43,6 +43,12 @@ export function useMenu() {
                     icon: Fm,
                     theme: 'outline',
                 },
+                {
+                    name: "示例",
+                    key: "apiExample",
+                    icon: Fm,
+                    theme: 'outline',
+                },
             ]
         },
         {

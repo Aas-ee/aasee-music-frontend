@@ -6,7 +6,7 @@
   // ],
   "extends": "@vue/tsconfig/tsconfig.web.json",
   "compilerOptions": {
-    "isolatedModules": false,
+    "isolatedModules": true,
     "baseUrl": ".",          // 基准路径
     "paths": {
       "@/*": ["src/*"]       // 映射别名路径
