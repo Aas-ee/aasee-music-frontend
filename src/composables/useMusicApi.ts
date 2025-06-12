@@ -227,13 +227,31 @@ export function useToplistApi() {
 export function useMvApi() {
   const detailState = useApiState()
   const urlsState = useApiState()
+  const fullInfoState = useApiState()
 
-  const getMvDetail = (params: GetMvGetDetailParams) => {
-    return detailState.execute(() => MusicApiService.getMvDetail(params))
+  const getMvDetail = (vids: string, cookie?: string) => {
+    return detailState.execute(() => {
+      // 动态导入 MV API 服务
+      return import('@/api/mv-api').then(module =>
+        module.default.getMvDetail(vids, cookie)
+      )
+    })
   }
 
-  const getMvUrls = (params: GetMvGetMvUrlsParams) => {
-    return urlsState.execute(() => MusicApiService.getMvUrls(params))
+  const getMvUrls = (vids: string, cookie?: string) => {
+    return urlsState.execute(() => {
+      return import('@/api/mv-api').then(module =>
+        module.default.getMvUrls(vids, cookie)
+      )
+    })
+  }
+
+  const getMvFullInfo = (vids: string, cookie?: string) => {
+    return fullInfoState.execute(() => {
+      return import('@/api/mv-api').then(module =>
+        module.default.getMvFullInfo(vids, cookie)
+      )
+    })
   }
 
   return {
@@ -250,5 +268,12 @@ export function useMvApi() {
     mvUrlsError: urlsState.error,
     getMvUrls,
     resetMvUrls: urlsState.reset,
+
+    // MV 完整信息
+    mvFullInfo: fullInfoState.data,
+    mvFullInfoLoading: fullInfoState.loading,
+    mvFullInfoError: fullInfoState.error,
+    getMvFullInfo,
+    resetMvFullInfo: fullInfoState.reset,
   }
 }

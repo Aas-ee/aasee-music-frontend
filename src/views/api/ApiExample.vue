@@ -138,6 +138,125 @@
       </div>
     </el-card>
 
+    <!-- MV 示例 -->
+    <el-card class="example-card">
+      <template #header>
+        <h3>🎬 MV 功能示例</h3>
+      </template>
+
+      <el-form :model="mvForm" @submit.prevent="loadMvInfo">
+        <el-form-item label="MV ID (vids)">
+          <el-input
+            v-model="mvForm.vids"
+            placeholder="输入 MV ID (例如: w0011j2cefa)"
+          />
+          <div class="form-tip">
+            💡 提示: 可以尝试这些 MV ID: w0011j2cefa, v0011j2cefa, m0011j2cefa
+          </div>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            @click="loadMvInfo"
+            :loading="mvFullInfoLoading"
+          >
+            加载 MV 信息
+          </el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- MV 信息显示 -->
+      <div v-if="mvFullInfo" class="mv-info">
+        <h4>MV 详情：</h4>
+        <div class="mv-detail-card">
+          <div class="mv-header">
+            <img
+              v-if="mvFullInfo.detail.cover_pic"
+              :src="mvFullInfo.detail.cover_pic"
+              alt="MV 封面"
+              class="mv-cover"
+            />
+            <div class="mv-meta">
+              <h5>{{ mvFullInfo.detail.name }}</h5>
+              <p class="mv-singers">
+                歌手: {{ mvFullInfo.detail.singers?.map(s => s.name).join(', ') }}
+              </p>
+              <p class="mv-stats">
+                播放量: {{ mvFullInfo.detail.playcnt?.toLocaleString() }} |
+                时长: {{ Math.floor(mvFullInfo.detail.duration / 60) }}:{{ String(mvFullInfo.detail.duration % 60).padStart(2, '0') }}
+              </p>
+            </div>
+          </div>
+
+          <div v-if="mvFullInfo.detail.desc" class="mv-description">
+            <p>{{ mvFullInfo.detail.desc }}</p>
+          </div>
+
+          <!-- MV 播放链接 -->
+          <div v-if="mvFullInfo.urls" class="mv-urls">
+            <h6>播放链接：</h6>
+            <div class="url-tabs">
+              <el-tabs v-model="activeFormat" type="card">
+                <el-tab-pane label="MP4" name="mp4">
+                  <div class="quality-options">
+                    <div
+                      v-for="quality in mvFullInfo.getAvailableQualities('mp4')"
+                      :key="quality"
+                      class="quality-item"
+                    >
+                      <span class="quality-label">{{ getQualityLabel(quality) }}:</span>
+                      <el-link
+                        :href="mvFullInfo.getUrl('mp4', quality)"
+                        target="_blank"
+                        type="primary"
+                        class="url-link"
+                      >
+                        播放链接
+                      </el-link>
+                    </div>
+                  </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="HLS" name="hls">
+                  <div class="quality-options">
+                    <div
+                      v-for="quality in mvFullInfo.getAvailableQualities('hls')"
+                      :key="quality"
+                      class="quality-item"
+                    >
+                      <span class="quality-label">{{ getQualityLabel(quality) }}:</span>
+                      <el-link
+                        :href="mvFullInfo.getUrl('hls', quality)"
+                        target="_blank"
+                        type="primary"
+                        class="url-link"
+                      >
+                        播放链接
+                      </el-link>
+                    </div>
+                  </div>
+                </el-tab-pane>
+              </el-tabs>
+            </div>
+
+            <!-- 最佳质量推荐 -->
+            <div class="best-quality">
+              <h6>推荐播放：</h6>
+              <el-link
+                :href="mvFullInfo.getBestUrl(activeFormat)"
+                target="_blank"
+                type="success"
+                class="best-url-link"
+              >
+                🎯 最佳质量 {{ activeFormat.toUpperCase() }} 播放
+              </el-link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
     <!-- 评论示例 -->
     <el-card class="example-card">
       <template #header>
@@ -254,7 +373,8 @@ import {
   useMusicApiConfig,
   useSearchApi,
   useToplistApi,
-  useCommentApi
+  useCommentApi,
+  useMvApi
 } from '@/composables/useMusicApi'
 import { ElMessage } from 'element-plus'
 
@@ -287,6 +407,19 @@ const {
   getTopCategories,
   getTopDetail
 } = useToplistApi()
+
+// MV 相关
+const {
+  mvFullInfo,
+  mvFullInfoLoading,
+  getMvFullInfo
+} = useMvApi()
+
+const mvForm = reactive({
+  vids: 'w0011j2cefa'
+})
+
+const activeFormat = ref<'mp4' | 'hls'>('mp4')
 
 // 评论相关
 const {
@@ -389,6 +522,31 @@ const loadComments = async () => {
   } catch (error) {
     ElMessage.error('评论加载失败')
   }
+}
+
+// MV 相关方法
+const loadMvInfo = async () => {
+  if (!mvForm.vids.trim()) {
+    ElMessage.warning('请输入 MV ID')
+    return
+  }
+
+  try {
+    await getMvFullInfo(mvForm.vids, config.cookie)
+    ElMessage.success('MV 信息加载完成')
+  } catch (error) {
+    ElMessage.error('MV 信息加载失败')
+  }
+}
+
+const getQualityLabel = (quality: string) => {
+  const labels: Record<string, string> = {
+    '10': '流畅',
+    '20': '标清',
+    '30': '高清',
+    '40': '超清'
+  }
+  return labels[quality] || quality
 }
 
 // 切换子评论展开状态
@@ -661,6 +819,121 @@ updateBaseUrl()
       .collapse-sub-comments {
         .collapse-text {
           color: #999;
+        }
+      }
+    }
+  }
+}
+
+// MV 相关样式
+.mv-info {
+  margin-top: 20px;
+
+  .mv-detail-card {
+    border: 1px solid #e4e7ed;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: #fff;
+
+    .mv-header {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+
+      .mv-cover {
+        width: 120px;
+        height: 68px;
+        border-radius: 6px;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+
+      .mv-meta {
+        flex: 1;
+
+        h5 {
+          margin: 0 0 8px 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #303133;
+        }
+
+        .mv-singers {
+          margin: 4px 0;
+          color: #606266;
+          font-size: 14px;
+        }
+
+        .mv-stats {
+          margin: 4px 0;
+          color: #909399;
+          font-size: 12px;
+        }
+      }
+    }
+
+    .mv-description {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #f5f7fa;
+      border-radius: 4px;
+
+      p {
+        margin: 0;
+        color: #606266;
+        line-height: 1.5;
+      }
+    }
+
+    .mv-urls {
+      h6 {
+        margin: 0 0 10px 0;
+        color: #303133;
+        font-weight: 600;
+      }
+
+      .url-tabs {
+        margin-bottom: 15px;
+
+        .quality-options {
+          .quality-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            .quality-label {
+              font-weight: 500;
+              color: #606266;
+            }
+
+            .url-link {
+              font-size: 14px;
+            }
+          }
+        }
+      }
+
+      .best-quality {
+        padding: 15px;
+        background-color: #f0f9ff;
+        border-radius: 6px;
+        border: 1px solid #b3d8ff;
+
+        h6 {
+          margin: 0 0 8px 0;
+          color: #409eff;
+          font-size: 14px;
+        }
+
+        .best-url-link {
+          font-size: 16px;
+          font-weight: 600;
         }
       }
     }

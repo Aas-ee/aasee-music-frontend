@@ -108,13 +108,15 @@ export class MusicApiService {
   }
 
   // ==================== MV 相关 API ====================
-  
+
   /**
    * 获取 MV 详细信息
    * @param params 请求参数
    */
   static async getMvDetail(params: GetMvGetDetailParams) {
-    return musicApi.getMvGetDetail(params)
+    const response = await musicApi.getMvGetDetail(params)
+    // 返回原始响应，让调用者处理动态字段
+    return response as any
   }
 
   /**
@@ -122,7 +124,9 @@ export class MusicApiService {
    * @param params 请求参数
    */
   static async getMvUrls(params: GetMvGetMvUrlsParams) {
-    return musicApi.getMvGetMvUrls(params)
+    const response = await musicApi.getMvGetMvUrls(params)
+    // 返回原始响应，让调用者处理动态字段
+    return response as any
   }
 
   // ==================== 排行榜相关 API ====================

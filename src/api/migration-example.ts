@@ -32,7 +32,7 @@ const searchCompleteOld = async (keyword: string, cookie: string) => {
 // ==================== 新的 API 调用方式 ====================
 
 import MusicApiService from './music-api'
-import { useCommentApi, useSearchApi } from '@/composables/useMusicApi'
+import { useCommentApi, useSearchApi, useMvApi } from '@/composables/useMusicApi'
 
 // 新方式：使用生成的类型安全的 API
 
@@ -230,11 +230,48 @@ export class ToplistApiMigration {
 
 // ==================== 使用示例 ====================
 
+/**
+ * MV 相关 API 迁移示例 - 解决动态字段问题
+ */
+export class MvApiMigration {
+  // 新方式：使用专门的 MV API 服务处理动态字段
+  static async getMvDetail(vids: string, cookie?: string) {
+    // 动态导入 MV API 服务
+    const { default: MvApiService } = await import('./mv-api')
+    return MvApiService.getMvDetail(vids, cookie)
+  }
+
+  static async getMvUrls(vids: string, cookie?: string) {
+    const { default: MvApiService } = await import('./mv-api')
+    return MvApiService.getMvUrls(vids, cookie)
+  }
+
+  static async getMvFullInfo(vids: string, cookie?: string) {
+    const { default: MvApiService } = await import('./mv-api')
+    return MvApiService.getMvFullInfo(vids, cookie)
+  }
+
+  // 在 Vue 组件中使用
+  static useMv() {
+    const { mvFullInfo, mvFullInfoLoading, getMvFullInfo } = useMvApi()
+
+    const loadMvInfo = async (vids: string, cookie?: string) => {
+      return getMvFullInfo(vids, cookie)
+    }
+
+    return {
+      mvFullInfo,
+      mvFullInfoLoading,
+      loadMvInfo
+    }
+  }
+}
+
 // 在 Vue 组件中的使用示例
 /*
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { CommentApiMigration, SearchApiMigration } from '@/api/migration-example'
+import { CommentApiMigration, SearchApiMigration, MvApiMigration } from '@/api/migration-example'
 
 // 方式 1：直接调用 API
 const loadComments = async () => {
@@ -246,13 +283,31 @@ const loadComments = async () => {
   }
 }
 
-// 方式 2：使用组合式 API（推荐）
+// 方式 2：MV API 使用示例（解决动态字段问题）
+const loadMvInfo = async () => {
+  try {
+    // 直接调用，自动处理动态字段
+    const mvInfo = await MvApiMigration.getMvFullInfo('w0011j2cefa', 'your-cookie')
+    console.log('MV 信息:', mvInfo)
+
+    // 获取最佳质量播放链接
+    const bestUrl = mvInfo.getBestUrl('mp4')
+    console.log('最佳播放链接:', bestUrl)
+  } catch (error) {
+    console.error('加载 MV 信息失败:', error)
+  }
+}
+
+// 方式 3：使用组合式 API（推荐）
 const { comments, loading, loadComments: loadCommentsReactive } = CommentApiMigration.useHotComments()
 const { searchResults, performSearch } = SearchApiMigration.useSearch()
+const { mvFullInfo, mvFullInfoLoading, loadMvInfo: loadMvInfoReactive } = MvApiMigration.useMv()
 
 onMounted(() => {
   loadComments()
   loadCommentsReactive('1531817')
+  loadMvInfo()
+  loadMvInfoReactive('w0011j2cefa', 'your-cookie')
 })
 </script>
 */
@@ -262,5 +317,6 @@ export default {
   SearchApiMigration,
   PlaylistApiMigration,
   SongApiMigration,
-  ToplistApiMigration
+  ToplistApiMigration,
+  MvApiMigration
 }
